@@ -27,6 +27,7 @@ export default async function handler(req, res) {
         }));
         items.push(...chunk.filter(Boolean));
       }
+      items.sort((a, b) => (String(a.at) < String(b.at) ? 1 : -1));
       return send(res, 200, { items });
     }
     if (req.method === 'PATCH') {
