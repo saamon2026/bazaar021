@@ -11,8 +11,14 @@ New and pre-owned streetwear store for the GTA. Static storefront (`public/index
 - `BLOB_READ_WRITE_TOKEN`: added automatically when the Blob store is connected.
 - `OWNER_KEY`: owner passcode, at least 12 characters.
 
+## Adding real stock (no code)
+Open `/#owner`, enter the passcode, and use the **جنس‌ها** panel: add a piece with a photo from your phone, edit it, mark it sold or delete it. Real pieces show in the Shop within about 30 seconds. The same panel sets the Instagram handle, store email, and a switch that hides the 21 sample pieces.
+
+- `GET /api/catalog` is public (listings + settings); `POST /api/catalog`, `POST /api/upload` need `x-owner-key`.
+- `GET /api/img?k=...` serves listing photos from the private Blob store, cached for a year at the edge.
+
 ## Still sample data
-The 21 products, lots, and draw shoe in `public/index.html` are samples. Replace them with real stock before Drop 001.
+The sample products, auction lots and draw shoe are in `public/index.html`. Hide the sample products from the owner panel once real stock is in.
 
 ## Keep in step
 - Auction lots live in two places: `LOTS` in `public/index.html` (what people see) and `LOTS` in `api/_auction.js` (opening bid and close offset the server enforces). Change both together.

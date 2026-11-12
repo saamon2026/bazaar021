@@ -375,6 +375,15 @@ fieldset.field legend{padding:0;margin-bottom:6px}
 .flink{display:inline-flex;align-items:center;min-height:28px;background:none;border:0;padding:0;color:var(--ink);font-size:14px;text-align:left;text-decoration:none}
 .flink:hover{text-decoration:underline}
 .pane.policy{gap:6px}.policy h3{font-size:16px;font-weight:700;margin:14px 0 0}.policy h3:first-child{margin-top:4px}.policy p{color:var(--ink-2);max-width:60ch}.policy strong{color:var(--ink)}
+.cat-grid{display:grid;gap:16px;margin-bottom:32px}@media (min-width:900px){.cat-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}}
+.cat-prev{margin-top:8px;min-height:60px;display:flex;align-items:center}.cat-prev img{max-height:180px;border-radius:var(--r);border:1px solid var(--line)}
+.cat-list{display:flex;flex-direction:column;gap:8px}
+.cat-row{display:grid;grid-template-columns:56px minmax(0,1fr);gap:10px;align-items:center;padding:10px;background:var(--paper);border:1px solid var(--line);border-radius:var(--r)}
+.cat-row.is-sold{opacity:.55}
+.cat-th{width:56px;height:56px;border-radius:var(--r);background:var(--raise);overflow:hidden}.cat-th img{width:100%;height:100%;object-fit:cover}
+.cat-txt{display:flex;flex-direction:column;gap:2px;min-width:0}.cat-txt b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cat-btns{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px}
+textarea.input{min-height:84px;padding-block:10px;resize:vertical}
 .tlink{color:var(--brand-text);font-weight:700;text-underline-offset:3px}
 .foot-base{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;padding-block:14px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink-2)}
 .foot-base .flink{font-family:var(--f-fa);font-size:13px}
@@ -422,6 +431,7 @@ fieldset.field legend{padding:0;margin-bottom:6px}
 .owner .pagehead h1{font-family:var(--f-fa);font-weight:800;font-size:clamp(30px,7.5vw,46px);line-height:1.35;text-transform:none}
 .owner .eyebrow{font-family:var(--f-fa);letter-spacing:0;font-size:12.5px;text-transform:none}
 .owner .lede{font-size:15.5px;max-width:64ch}
+.owner .field label,.owner .check,.owner .chip{font-family:var(--f-fa);letter-spacing:0;text-transform:none}
 .owner h2{font-family:var(--f-fa);font-weight:800;font-size:21px;line-height:1.5;margin:32px 0 12px}
 .owner p,.owner li{font-size:15px}
 .ltr{direction:ltr;unicode-bidi:isolate;font-family:var(--f-mono);font-stretch:87.5%;font-size:.86em}
@@ -886,15 +896,23 @@ const DEPTS = {men:'Men', women:'Women', kids:'Kids', acc:'Accessories', watch:'
 const TICK = ['Free draws every Friday', 'Mystery boxes from $79', 'No purchase necessary', 'Every piece checked by hand', 'Pickup in Richmond Hill', 'Ships across Canada and the US', 'Trade-ins open'];
 const PAYN = {cash:'cash', credit:'store credit', consign:'consignment'};
 
-const byId = id => P.find(p => p.id === id) || BOXES.find(b => b.id === id);
+/* real listings come from /api/catalog (added in the owner room); the sample pieces above fill the rack until the owner hides them */
+const SAMPLES = P.slice();
+const CAT = {items: [], settings: {}, loaded: false};
+const ART_OF = {kicks: 'low', wear: 'hoodie', acc: 'cap', watch: 'watch'};
+const CAT_COL = {a: '#2B2D33', b: '#17181C', c: '#F1EFF5', sole: '#F4F4F4', out: '#17181C', inner: '#2B2D33', string: '#F1EFF5', tape: '#F1EFF5', q: '#F1EFF5'};
+const asListing = it => Object.assign({art: ART_OF[it.cat] || 'tee', tint: '#B9BDC8', col: CAT_COL, pos: '50% 55%', note: ''}, it, {img: it.img || undefined});
+const byId = id => P.find(p => p.id === id) || SAMPLES.find(p => p.id === id) || CAT.items.find(p => p.id === id) || BOXES.find(b => b.id === id);
 const isNew = p => p.cond === 'DS' || p.cond === 'NWT';
 const gradeName = c => (GRADES.find(g => g[0] === c) || [c, ''])[1];
 const inc = a => a < 100 ? 5 : a < 500 ? 10 : 25;
-const COUNT = {
-  new: P.filter(p => isNew(p) && !p.outlet).length,
-  used: P.filter(p => !isNew(p) && !p.outlet).length,
-  outlet: P.filter(p => p.outlet).length
-};
+const COUNT = {};
+function countRack() {
+  COUNT.new = P.filter(p => isNew(p) && !p.outlet).length;
+  COUNT.used = P.filter(p => !isNew(p) && !p.outlet).length;
+  COUNT.outlet = P.filter(p => p.outlet).length;
+}
+countRack();
 const TILES = [
   {to:'shop', cond:'new'}, {to:'shop', cond:'used'}, {to:'bid'}, {to:'draw'}, {to:'sell'}, {to:'outlet'}
 ];
@@ -903,7 +921,7 @@ const TILES = [
 const state = {
   route: 'home', cond: 'all', dept: 'all', sort: 'new', lotTab: 'artist',
   mbTier: 'mb2', mbDept: 'men', mbShoe: '', mbTop: '', mbSkip: '',
-  bag: (Array.isArray(mem.get('bag', [])) ? mem.get('bag', []) : []).filter(b => b && byId(b.id)),
+  bag: (Array.isArray(mem.get('bag', [])) ? mem.get('bag', []) : []).filter(b => b && (byId(b.id) || /^c[a-z0-9]+$/.test(b.id))),
   bids: (() => { const b = mem.get('bids', {}); return b && typeof b === 'object' && mem.get('bidWeek', 0) === AUCTION_CLOSE ? b : {}; })(),
   live: {}, liveAt: 0,
   entry: mem.get('entry', null),
@@ -2125,7 +2143,7 @@ function vOwner() {
 
     <h2>Mystery Box: عددها و قانون‌ها</h2>
     <p>کار باکس اینه که جنسی که دو هفته روی قفسه مونده نقد بشه، بدون اینکه بره اوت‌لت. هر آنباکسینگ هم یه ویدیوی رایگان برای پیجه.</p>
-    <div class="tbl-wrap"><table>
+    <div class="tbl-wrap" tabindex="0" role="region" aria-label="جدول Mystery Box"><table>
       <thead><tr><th>سطح</th><th>قیمت باکس</th><th>ارزش قفسه</th><th>هزینه‌ی جنس (خرید نقدی ۶۰٪)</th><th>سود هر باکس</th></tr></thead>
       <tbody>${BOXES.map(b => { const cost = Math.round(b.value * .6); return `<tr><td><span class="ltr">${esc(b.tier)}</span></td><td class="num">${money(b.price)}</td><td class="num">${money(b.value)}</td><td class="num">${money(cost)}</td><td class="num">${money(b.price - cost)}</td></tr>`; }).join('')}</tbody>
     </table></div>
@@ -2220,8 +2238,144 @@ function inboxHTML() {
         <span class="m-to">${summary(it)} · <span class="ltr">${esc(new Date(it.at).toLocaleString('en-CA', {timeZone: TZ, dateStyle: 'medium', timeStyle: 'short'}))}</span></span>
       </div>`;
     }).join('')}</div>`}
+    ${catalogHTML()}
     <h2>یادداشت‌ها و SOP</h2>`;
 }
+/* the owner adds real pieces here; customers see them in the Shop a few seconds later */
+const ED = {id: null, img: '', uploading: false};
+const DEPT_FA = [['men', 'مردانه'], ['women', 'زنانه'], ['kids', 'بچگانه'], ['acc', 'اکسسوری'], ['watch', 'ساعت']];
+const CAT_FA = [['kicks', 'کفش'], ['wear', 'لباس'], ['acc', 'اکسسوری (کلاه، کیف…)'], ['watch', 'ساعت']];
+function catalogHTML() {
+  const it = (ED.id && CAT.items.find(x => x.id === ED.id)) || {};
+  const s = CAT.settings || {};
+  const opt = (list, cur) => list.map(([v, t]) => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(t)}</option>`).join('');
+  const val = (k, d = '') => esc(it[k] == null ? d : it[k]);
+  const live = CAT.items.filter(x => !x.sold).length;
+  return `<div class="pagehead"><p class="eyebrow">ویترین · فقط تو می‌بینی</p><h1>جنس‌ها</h1>
+      <p class="lede">هر جنسی اینجا ثبت کنی، حداکثر نیم دقیقه بعد توی Shop برای همه دیده می‌شه. اسم و توضیح رو انگلیسی بنویس چون مشتری می‌بینه. ${CAT.loaded ? `الان <span class="ltr">${live}</span> جنس واقعی فعاله${s.hideSamples ? ' و نمونه‌ها مخفی‌ان.' : ' و نمونه‌ها هم کنارشون نشون داده می‌شن.'}` : ''}</p></div>
+    <div class="cat-grid">
+    <form id="catForm" class="card-form" novalidate>
+      <h2 style="margin:0">${ED.id ? 'ویرایش جنس <span class="ltr">' + esc(it.sku || '') + '</span>' : 'جنس جدید'}</h2>
+      <div class="field"><label for="cPhoto">عکس (یه عکس روشن، روی زمینه ساده)</label>
+        <input class="input file" id="cPhoto" type="file" accept="image/*">
+        <div class="cat-prev">${ED.img ? `<img src="${esc(ED.img)}" alt="">` : '<span class="fine">هنوز عکسی نیست</span>'}</div>
+        <p class="fine" id="cUp">${ED.uploading ? 'در حال آپلود…' : ''}</p></div>
+      <div class="grid2">
+        <div class="field"><label for="cBrand">برند</label><input class="input" id="cBrand" name="brand" dir="ltr" placeholder="Nike" value="${val('brand')}"></div>
+        <div class="field"><label for="cName">اسم مدل</label><input class="input" id="cName" name="name" dir="ltr" placeholder="Dunk Low “Panda”" value="${val('name')}"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label for="cDept">بخش</label><select class="input" id="cDept" name="dept">${opt(DEPT_FA, it.dept || 'men')}</select></div>
+        <div class="field"><label for="cCat">نوع</label><select class="input" id="cCat" name="cat">${opt(CAT_FA, it.cat || 'kicks')}</select></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label for="cCond">وضعیت</label><select class="input" id="cCond" name="cond" dir="ltr">${opt(GRADES.map(g => [g[0], g[0] + ' · ' + g[1]]), it.cond || 'DS')}</select></div>
+        <div class="field"><label for="cSizes">سایز (چندتا؟ با کاما جدا کن)</label><input class="input" id="cSizes" name="sizes" dir="ltr" placeholder="US 10" value="${esc((it.sizes || []).join(', '))}"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label for="cPrice">قیمت (دلار کانادا)</label><input class="input" id="cPrice" name="price" inputmode="numeric" dir="ltr" value="${val('price')}"></div>
+        <div class="field"><label for="cWas">قیمت قبل از تخفیف (اختیاری)</label><input class="input" id="cWas" name="was" inputmode="numeric" dir="ltr" value="${val('was')}"></div>
+      </div>
+      <label class="check"><input type="checkbox" name="box" ${it.box ? 'checked' : ''}> کفش با جعبه اصلی / لباس با تگ</label>
+      <label class="check"><input type="checkbox" name="outlet" ${it.outlet ? 'checked' : ''}> اوت‌لت (فروش قطعی، توی بخش Outlet)</label>
+      <div class="field"><label for="cNote">توضیح برای مشتری (انگلیسی)</label><textarea class="input" id="cNote" name="note" rows="3" dir="ltr" placeholder="Worn twice. Original box, no lid.">${val('note')}</textarea></div>
+      <p class="err" id="cErr" role="alert"></p>
+      <button class="btn btn-primary wide" type="submit">${ED.id ? 'ذخیره تغییرات' : 'اضافه کن به Shop'}</button>
+      ${ED.id ? '<button class="btn wide" type="button" data-act="ccancel">انصراف</button>' : ''}
+    </form>
+    <div class="stack">
+      ${CAT.items.length ? `<ul class="cat-list">${CAT.items.map(x => `<li class="cat-row${x.sold ? ' is-sold' : ''}">
+        <span class="cat-th">${x.img ? `<img src="${esc(x.img)}" alt="" loading="lazy">` : ''}</span>
+        <span class="cat-txt"><b class="ltr">${esc(x.brand)} ${esc(x.name)}</b><span class="ltr fine">${esc(x.sku)} · ${esc(x.sizes.join(' / '))} · ${esc(x.cond)} · ${money(x.price)}</span>${x.sold ? '<span class="fine">فروخته شد</span>' : ''}</span>
+        <span class="cat-btns">
+          <button class="chip" data-act="cedit" data-id="${x.id}">ویرایش</button>
+          <button class="chip" data-act="csold" data-id="${x.id}" data-v="${x.sold ? '0' : '1'}">${x.sold ? 'برگرده به فروش' : 'فروخته شد'}</button>
+          <button class="chip" data-act="cdel" data-id="${x.id}">حذف</button>
+        </span></li>`).join('')}</ul>` : '<div class="empty"><p>هنوز جنس واقعی ثبت نکردی. اولین جنس رو از فرم کنار اضافه کن.</p></div>'}
+      <form id="setForm" class="card-form" novalidate>
+        <h2 style="margin:0">تنظیمات فروشگاه</h2>
+        <div class="field"><label for="sIg">هندل اینستاگرام</label><input class="input" id="sIg" name="ig" dir="ltr" placeholder="@bazaar021" value="${esc(s.ig || '')}"></div>
+        <div class="field"><label for="sEm">ایمیل فروشگاه</label><input class="input" id="sEm" name="email" type="email" dir="ltr" placeholder="hello@…" value="${esc(s.email || '')}"></div>
+        <label class="check"><input type="checkbox" name="hideSamples" ${s.hideSamples ? 'checked' : ''}> نمونه‌ها رو از Shop بردار (وقتی جنس واقعی کافی گذاشتی)</label>
+        <p class="err" id="setErr" role="alert"></p>
+        <button class="btn wide" type="submit">ذخیره تنظیمات</button>
+        <p class="fine">اینستاگرام و ایمیل توی بخش Contact، صفحه Privacy و پیام‌های خطا نشون داده می‌شن.</p>
+      </form>
+    </div>
+    </div>`;
+}
+async function ownerPost(url, body) {
+  const r = await fetch(url, {method: 'POST', headers: {'Content-Type': 'application/json', 'x-owner-key': ownerKey()}, body: JSON.stringify(body)});
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || 'ذخیره نشد. دوباره امتحان کن.');
+  return j;
+}
+/* shrink a phone photo to at most 1400px before it leaves the device */
+function shrink(file) {
+  return new Promise((ok, bad) => {
+    const u = URL.createObjectURL(file), im = new Image();
+    im.onload = () => {
+      const k = Math.min(1, 1400 / Math.max(im.naturalWidth, im.naturalHeight));
+      const c = document.createElement('canvas');
+      c.width = Math.round(im.naturalWidth * k); c.height = Math.round(im.naturalHeight * k);
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(u);
+      let d = c.toDataURL('image/webp', .82);
+      if (!/^data:image\/webp/.test(d)) d = c.toDataURL('image/jpeg', .85);
+      ok(d);
+    };
+    im.onerror = () => { URL.revokeObjectURL(u); bad(new Error('این فایل عکس باز نشد.')); };
+    im.src = u;
+  });
+}
+document.addEventListener('change', async e => {
+  if (e.target.id !== 'cPhoto' || !e.target.files || !e.target.files[0]) return;
+  const up = $('#cUp'), prev = $('.cat-prev');
+  ED.uploading = true; if (up) up.textContent = 'در حال آپلود…';
+  try {
+    const data = await shrink(e.target.files[0]);
+    if (prev) prev.innerHTML = `<img src="${data}" alt="">`;
+    const j = await ownerPost('/api/upload', {data});
+    ED.img = j.src;
+    if (up) up.textContent = 'عکس آپلود شد ✓';
+  } catch (err) { ED.img = ''; if (up) up.textContent = err.message || 'آپلود نشد'; }
+  ED.uploading = false;
+});
+document.addEventListener('submit', async e => {
+  const f = e.target;
+  if (f.id !== 'catForm' && f.id !== 'setForm') return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  const v = Object.fromEntries(new FormData(f));
+  try {
+    if (f.id === 'setForm') {
+      busy(f, true);
+      applyCatalog(await ownerPost('/api/catalog', {action: 'settings', settings: {ig: v.ig, email: v.email, hideSamples: !!v.hideSamples}}));
+      render(); toast('تنظیمات ذخیره شد');
+      return;
+    }
+    if (ED.uploading) return fail('cErr', 'صبر کن آپلود عکس تموم بشه.');
+    if (!String(v.brand || '').trim()) return fail('cErr', 'برند رو بنویس.', 'cBrand');
+    if (!String(v.name || '').trim()) return fail('cErr', 'اسم مدل رو بنویس.', 'cName');
+    const price = parseInt(String(v.price || '').replace(/[^0-9]/g, ''), 10);
+    if (!price) return fail('cErr', 'قیمت رو به عدد بنویس.', 'cPrice');
+    if (!ED.img && !ED.id && !confirm('بدون عکس اضافه بشه؟ به‌جای عکس یه طرح ساده نشون داده می‌شه.')) return;
+    busy(f, true);
+    const item = {id: ED.id || undefined, brand: v.brand, name: v.name, dept: v.dept, cat: v.cat, cond: v.cond, sizes: v.sizes, price, was: parseInt(String(v.was || '').replace(/[^0-9]/g, ''), 10) || 0, outlet: !!v.outlet, box: !!v.box, note: v.note, img: ED.img};
+    applyCatalog(await ownerPost('/api/catalog', {action: 'save', item}));
+    const was = ED.id; ED.id = null; ED.img = '';
+    render(); toast(was ? 'ذخیره شد' : 'به Shop اضافه شد');
+  } catch (err) { busy(f, false); fail(f.id === 'setForm' ? 'setErr' : 'cErr', err.message); }
+}, true);
+document.addEventListener('click', async e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const a = b.dataset.act, id = b.dataset.id;
+  try {
+    if (a === 'cedit') { const it = CAT.items.find(x => x.id === id); if (!it) return; ED.id = id; ED.img = it.img || ''; render(); const f = $('#catForm'); if (f) f.scrollIntoView({block: 'start'}); }
+    else if (a === 'ccancel') { ED.id = null; ED.img = ''; render(); }
+    else if (a === 'csold') { applyCatalog(await ownerPost('/api/catalog', {action: 'sold', id, sold: b.dataset.v === '1'})); render(); toast('ذخیره شد'); }
+    else if (a === 'cdel') { if (!confirm('این جنس برای همیشه حذف بشه؟')) return; applyCatalog(await ownerPost('/api/catalog', {action: 'delete', id})); if (ED.id === id) { ED.id = null; ED.img = ''; } render(); toast('حذف شد'); }
+  } catch (err) { toast(err.message); }
+});
 document.addEventListener('submit', async e => {
   if (e.target.id !== 'ownerForm') return;
   e.preventDefault();
@@ -2318,6 +2472,31 @@ function go(route) {
   }
 }
 
+/* ------------------------------------------------------------ live catalog */
+function applyCatalog(j) {
+  if (!j || !Array.isArray(j.items)) return;
+  CAT.items = j.items.map(asListing);
+  CAT.settings = j.settings || {};
+  CAT.loaded = true;
+  const live = CAT.items.filter(p => !p.sold && p.price > 0);
+  P.length = 0;
+  P.push(...live, ...(CAT.settings.hideSamples ? [] : SAMPLES));
+  countRack();
+  CONTACT.ig = CAT.settings.ig || '';
+  CONTACT.email = CAT.settings.email || '';
+  const before = state.bag.length;
+  state.bag = state.bag.filter(b => BOXES.some(x => x.id === b.id) || P.some(x => x.id === b.id));
+  if (state.bag.length !== before) { saveBag(); toast('A piece in your bag just sold, so we took it out.'); }
+  updateChrome();
+}
+function loadCatalog() {
+  return fetch('/api/catalog').then(r => r.ok ? r.json() : null).then(j => {
+    if (!j) return;
+    applyCatalog(j);
+    if (state.route === 'home') render('shop'); else render();
+  }).catch(() => {});
+}
+
 /* -------------------------------------------------------------- the sheet */
 const scrim = $('#scrim'), sheet = $('#sheet');
 let sheetKind = null, lastFocus = null;
@@ -2355,10 +2534,11 @@ function trap(e) {
 
 function openProduct(id) {
   const p = byId(id); if (!p) return;
+  if (!P.includes(p)) { go('shop'); toast('That piece has sold. Here’s what’s on the rack.'); return; }
   state.pdSize = p.sizes[0];
   const off = p.was ? Math.round((1 - p.price / p.was) * 100) : 0;
-  const boxLabel = p.cat === 'wear' || p.cat === 'acc' ? 'Tags' : p.cat === 'watch' ? 'Maker' : 'Box';
-  const boxVal = p.cat === 'watch' ? esc(p.brand) + ', NYC' : p.cat === 'kicks' ? (p.box === false ? 'No box' : 'Original box') : (p.cond === 'NWT' ? 'Attached' : 'Removed');
+  const boxLabel = p.cat === 'wear' || p.cat === 'acc' ? 'Tags' : p.cat === 'watch' ? (p.at ? 'Box' : 'Maker') : 'Box';
+  const boxVal = p.at ? (p.cat === 'kicks' || p.cat === 'watch' ? (p.box ? 'Original box' : 'No box') : (p.box ? 'Attached' : 'Removed')) : p.cat === 'watch' ? esc(p.brand) + ', NYC' : p.cat === 'kicks' ? (p.box === false ? 'No box' : 'Original box') : (p.cond === 'NWT' ? 'Attached' : 'Removed');
   openSheet(`
     <div class="sheet-head"><span class="eyebrow">${esc(p.sku)} · ${esc(DEPTS[p.dept])}</span><button class="x" data-act="close" aria-label="Close">${ICON.x}</button></div>
     <div class="pd">
@@ -2717,6 +2897,7 @@ window.addEventListener('hashchange', () => {
   if (VIEWS[r] && r !== state.route) { closeSheet(); go(r); }
 });
 render();
+loadCatalog();
 if (start && start !== 'owner' && VIEWS[start]) setTimeout(() => go(start), 80);
 setInterval(tick, 1000);
 checkOwner();
