@@ -1753,7 +1753,7 @@ function vHome() {
       <p class="eyebrow">Drop ${DRAW.no} · ${esc(when(DRAW_CLOSE))}</p>
       <h1 class="display">Missed it <span class="hl">at retail?</span></h1>
       <p class="lede">Authenticated sneakers and streetwear, new and worn, checked by hand in Richmond Hill. Free draws every Friday. No bots and no paid raffles.</p>
-      <div class="ctas"><button class="btn btn-primary" data-act="nav" data-to="shop">Shop the rack</button><button class="btn" data-act="nav" data-to="draw">Enter Draw ${DRAW.no}</button></div>
+      <div class="ctas"><button class="btn btn-primary" data-act="nav" data-to="shop">Shop the rack</button><button class="btn" data-act="nav" data-to="draw">${isOpen('drawOpen') ? 'Enter Draw ' + DRAW.no : 'Free draws'}</button></div>
       <p class="eyebrow scrollcue">Scroll into the vault <i aria-hidden="true">↓</i></p>
     </div>
     <div class="hero-strip" aria-label="Also in the vault">${strip.map(s => `<button ${s[2] === 'open' ? `data-act="open" data-id="${s[0]}"` : `data-act="nav" data-to="${s[2]}"`} aria-label="${esc(s[1])}"><img src="${s[3]}" alt="" style="object-position:${s[4]}" loading="lazy" decoding="async"><span>${esc(s[1])}</span></button>`).join('')}</div>
@@ -1777,12 +1777,10 @@ function vHome() {
         <div class="ctas"><button class="btn btn-primary" data-act="open" data-id="p01">View piece</button><button class="btn" data-act="tile" data-i="0">All new · ${COUNT.new}</button></div>`)}
       ${aisle(2, `<p class="cue">Aisle 02 · Pre-owned</p><h2 class="display">Worn, graded, photographed</h2>${fb(p14.art, p14.col, p14.tint, p14.name, p14)}${aisleItem(p14)}
         <div class="ctas"><button class="btn btn-primary" data-act="open" data-id="p14">View piece</button><button class="btn" data-act="tile" data-i="1">All pre-owned · ${COUNT.used}</button></div>`)}
-      ${aisle(3, `<p class="cue live">Aisle 03 · Bid · Live</p><h2 class="display">Worn on stage. Signed backstage.</h2>${fb(lot.art, lot.col, lot.tint, lot.title, lot)}
-        <div class="aisle-item"><span class="lbl-brand">Lot ${lot.lot} · Artist Closet</span><strong>${esc(lot.title)}</strong><span class="price">${money(minBid(lot))}</span><span class="eyebrow">Next bid · ends in <span data-ends="${lotEnd(lot)}">--:--:--</span> · artist revealed Fri 8 p.m. ET</span></div>
-        <div class="ctas"><button class="btn btn-primary" data-act="nav" data-to="bid">Bid on lot ${lot.lot}</button></div>`)}
+      ${aisle(3, `<p class="cue live">Aisle 03 · Bid</p><h2 class="display">Worn on stage. Signed backstage.</h2>${fb(lot.art, lot.col, lot.tint, lot.title, lot)}
+        <div data-aisle="bid">${AISLE.bid()}</div>`)}
       ${aisle(4, `<p class="cue">Aisle 04 · Draw ${DRAW.no}</p><h2 class="display">Free entry. Retail price.</h2>${fb(DRAW.art, DRAW.col, DRAW.tint, DRAW.name)}
-        <div class="aisle-item"><span class="lbl-brand">${esc(DRAW.brand)} · ${DRAW.pairs} pairs</span><strong>${esc(DRAW.name)}</strong><span class="price">${money(DRAW.retail)}</span><span class="eyebrow">US 8–12 · entries close in <span data-ends="${DRAW_CLOSE}">--:--:--</span></span></div>
-        <div class="ctas"><button class="btn btn-primary" data-act="nav" data-to="draw">Enter free</button></div>`)}
+        <div data-aisle="draw">${AISLE.draw()}</div>`)}
       ${aisle(5, `<p class="cue">Aisle 05 · Mystery Box</p><h2 class="display">Sealed. Worth more than you pay.</h2>${fb(mb.art, mb.col, mb.tint, mb.name, mb)}
         <div class="aisle-item"><span class="lbl-brand">Three tiers · Batch 001</span><strong>${BOXES.map(b => `${b.tier} ${money(b.price)}`).join(' · ')}</strong><span class="eyebrow">Hand-picked to your size · every box packed to its listed value</span></div>
         <div class="ctas"><button class="btn btn-primary" data-act="nav" data-to="mystery">Pick a box</button></div>`)}
@@ -1875,7 +1873,30 @@ function lotCard(l) {
     </div>
   </article>`;
 }
+/* draws and auctions stay closed until the owner opens them in the owner room (they need real stock) */
+const isOpen = k => !!(CAT.settings && CAT.settings[k]);
+/* the vault's draw and auction aisles; patched in place when the catalog settings arrive so the 3D stage isn't rebuilt */
+const AISLE = {
+  bid: () => { const lot = LOTS[0]; return isOpen('bidOpen')
+    ? `<div class="aisle-item"><span class="lbl-brand">Lot ${lot.lot} · Artist Closet</span><strong>${esc(lot.title)}</strong><span class="price">${money(minBid(lot))}</span><span class="eyebrow">Next bid · ends in <span data-ends="${lotEnd(lot)}">--:--:--</span> · artist revealed Fri 8 p.m. ET</span></div>
+       <div class="ctas"><button class="btn btn-primary" data-act="nav" data-to="bid">Bid on lot ${lot.lot}</button></div>`
+    : `<div class="aisle-item"><span class="lbl-brand">Auctions</span><strong>The first lots are being lined up</strong><span class="eyebrow">Coming soon</span></div>
+       <div class="ctas"><button class="btn" data-act="nav" data-to="bid">How bidding works</button></div>`; },
+  draw: () => isOpen('drawOpen')
+    ? `<div class="aisle-item"><span class="lbl-brand">${esc(DRAW.brand)} · ${DRAW.pairs} pairs</span><strong>${esc(DRAW.name)}</strong><span class="price">${money(DRAW.retail)}</span><span class="eyebrow">US 8–12 · entries close in <span data-ends="${DRAW_CLOSE}">--:--:--</span></span></div>
+       <div class="ctas"><button class="btn btn-primary" data-act="nav" data-to="draw">Enter free</button></div>`
+    : `<div class="aisle-item"><span class="lbl-brand">Free draws</span><strong>No purchase necessary. Retail price.</strong><span class="eyebrow">First draw coming soon</span></div>
+       <div class="ctas"><button class="btn" data-act="nav" data-to="draw">See how it works</button></div>`
+};
+function soonHTML(id, eyebrow, title, line) {
+  const ig = igURL();
+  return `<section class="sec"><div class="wrap"><div class="pagehead"><p class="eyebrow">${esc(eyebrow)}</p><h2 class="display">${esc(title)}</h2>
+    <p class="lede">${esc(line)}</p></div>
+    <div class="ticket"><p class="eyebrow">Coming soon</p><p>${ig ? `Follow <a class="tlink" href="${esc(ig)}" target="_blank" rel="noopener">${esc(CONTACT.ig)}</a> on Instagram to hear the moment it opens.` : 'Check back soon. It opens as soon as the first pieces are in.'}</p>
+    <button class="btn" data-act="nav" data-to="shop">Shop the rack</button></div></div></section>`;
+}
 function vBid() {
+  if (!isOpen('bidOpen')) return soonHTML('bid', 'Auctions', 'Bid', 'Stage-worn and signed pieces from artists, plus samples and numbered runs from labels. The first auction is being lined up.');
   const lots = LOTS.filter(l => l.kind === state.lotTab);
   return `<section class="sec"><div class="wrap">
     <div class="pagehead"><p class="eyebrow">Auctions · first lot closes ${esc(when(AUCTION_CLOSE))}</p><h2 class="display">Bid</h2>
@@ -1913,6 +1934,7 @@ function drawForm() {
   </form>`;
 }
 function vDraw() {
+  if (!isOpen('drawOpen')) return soonHTML('draw', 'Free draw', 'Free draw', 'Win the right to buy a hyped pair at retail. Free to enter, no purchase necessary. The first draw opens soon.');
   const e = state.entry;
   return `<section class="sec"><div class="wrap">
     <div class="pagehead"><p class="eyebrow">Draw ${DRAW.no} · closes ${esc(when(DRAW_CLOSE))}</p><h2 class="display">Free draw</h2>
@@ -2296,6 +2318,8 @@ function catalogHTML() {
         <h2 style="margin:0">تنظیمات فروشگاه</h2>
         <div class="field"><label for="sIg">هندل اینستاگرام</label><input class="input" id="sIg" name="ig" dir="ltr" placeholder="@bazaar021" value="${esc(s.ig || '')}"></div>
         <div class="field"><label for="sEm">ایمیل فروشگاه</label><input class="input" id="sEm" name="email" type="email" dir="ltr" placeholder="hello@…" value="${esc(s.email || '')}"></div>
+        <label class="check"><input type="checkbox" name="drawOpen" ${s.drawOpen ? 'checked' : ''}> Draw باز باشه (فقط وقتی کفش جایزه رو واقعاً داری)</label>
+        <label class="check"><input type="checkbox" name="bidOpen" ${s.bidOpen ? 'checked' : ''}> مزایده باز باشه (فقط وقتی لات‌های واقعی گذاشتی)</label>
         <label class="check"><input type="checkbox" name="hideSamples" ${s.hideSamples ? 'checked' : ''}> نمونه‌ها رو از Shop بردار (وقتی جنس واقعی کافی گذاشتی)</label>
         <p class="err" id="setErr" role="alert"></p>
         <button class="btn wide" type="submit">ذخیره تنظیمات</button>
@@ -2349,7 +2373,7 @@ document.addEventListener('submit', async e => {
   try {
     if (f.id === 'setForm') {
       busy(f, true);
-      applyCatalog(await ownerPost('/api/catalog', {action: 'settings', settings: {ig: v.ig, email: v.email, hideSamples: !!v.hideSamples}}));
+      applyCatalog(await ownerPost('/api/catalog', {action: 'settings', settings: {ig: v.ig, email: v.email, hideSamples: !!v.hideSamples, drawOpen: !!v.drawOpen, bidOpen: !!v.bidOpen}}));
       render(); toast('تنظیمات ذخیره شد');
       return;
     }
@@ -2493,7 +2517,7 @@ function loadCatalog() {
   return fetch('/api/catalog').then(r => r.ok ? r.json() : null).then(j => {
     if (!j) return;
     applyCatalog(j);
-    if (state.route === 'home') render('shop'); else render();
+    if (state.route === 'home') { render('shop'); render('draw'); render('bid'); $$('[data-aisle]').forEach(el => { el.innerHTML = AISLE[el.dataset.aisle](); }); tick(); } else render();
   }).catch(() => {});
 }
 
