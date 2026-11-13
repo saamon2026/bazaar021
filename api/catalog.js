@@ -82,7 +82,9 @@ export default async function handler(req, res) {
       c.settings = {
         ig: ig ? '@' + ig.replace(/^@+/, '') : '',
         email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : '',
-        hideSamples: !!s.hideSamples
+        hideSamples: !!s.hideSamples,
+        drawOpen: !!s.drawOpen,
+        bidOpen: !!s.bidOpen
       };
     } else return send(res, 400, { error: 'Unknown action' });
     await writeCatalog(c);
