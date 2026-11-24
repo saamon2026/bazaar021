@@ -1,2 +1,2 @@
 # LOCAL — first look (KADRE concept)
-Static prototype: designer film on scroll -> slide into the green store.
+Scroll-driven film (Google Flow clip + keyframes) -> slide into the green store.

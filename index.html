@@ -36,23 +36,31 @@
 
 <main>
   <!-- SCENE 01 — the designer (scroll-scrubbed film) -->
-  <section class="film" id="film" aria-label="The designer">
+  <section class="film" id="film" aria-label="The designer and the collection">
     <div class="film__stage">
-      <div class="shot shot--a" id="shotA"><img src="assets/shot-behind.jpg" alt="The designer at work, seen from behind, sketching the Vieux-Port knit"></div>
-      <div class="shot shot--b" id="shotB"><img src="assets/shot-overhead.jpg" alt="Overhead view of the designer's desk with the Vieux-Port knit"></div>
-      <div class="film__grain" aria-hidden="true"></div>
+      <canvas id="filmCanvas" aria-hidden="true"></canvas>
+      <img class="film__poster" id="filmPoster" src="film/v00.webp" alt="The LOCAL designer at work in a white studio under the Local. wordmark, in front of a rail of LOCAL garments">
+      <div class="film__shade" aria-hidden="true"></div>
 
-      <div class="cap cap--a" data-in="0" data-out="0.18">
-        <p class="eyebrow">Montréal · Atelier · 21:47</p>
+      <div class="cap" data-in="0" data-out="0.14">
+        <p class="eyebrow">Montréal · Atelier</p>
         <h1 class="display">Every stitch<br>has a story.</h1>
       </div>
-      <div class="cap cap--b" data-in="0.26" data-out="0.46">
+      <div class="cap" data-in="0.24" data-out="0.46">
         <p class="eyebrow">Chapter 01</p>
         <h2 class="display display--md">Designed<br>from the city.</h2>
       </div>
-      <div class="cap cap--c" data-in="0.66" data-out="1.01">
+      <div class="cap cap--product" data-in="0.6" data-out="0.76">
+        <p class="eyebrow">Local — Heritage Hoodie</p>
+        <h2 class="display display--md">Heavyweight.<br>Embossed.</h2>
+        <button class="chipbtn" type="button" data-open="Heritage Hoodie - Red">Red · $129.99 <span aria-hidden="true">→</span></button>
+      </div>
+      <div class="cap cap--product" data-in="0.79" data-out="0.9">
         <p class="eyebrow">Knit 01 — Vieux-Port</p>
-        <h2 class="display display--md">Woven into<br>your story.</h2>
+        <h2 class="display display--md">The city,<br>stitch by stitch.</h2>
+        <button class="chipbtn" type="button" data-open="Knit 01 — Vieux-Port">Coming soon <span aria-hidden="true">→</span></button>
+      </div>
+      <div class="cap cap--end" data-in="0.93" data-out="1.01">
         <button class="cta" id="enterStore" type="button">Enter the store <span aria-hidden="true">→</span></button>
       </div>
 

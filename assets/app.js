@@ -4,34 +4,53 @@
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
-  /* ---------------------------------------------------------- preload the two shots */
+  /* ---------------------------------------------------------- film frames (Flow clip + keyframes) */
+  const FRAMES = [...Array(13).keys()].map(i => "film/v" + String(i).padStart(2, "0") + ".webp").concat(["film/plum.webp", "film/endcard.webp"]);
+  // where each frame sits on the scroll timeline (0..1): the clip, a hold on the hoodie, the knit, the end card
+  const AT = [0, .05, .1, .15, .2, .25, .3, .35, .41, .47, .53, .6, .68, .82, .96];
+  const imgs = new Array(FRAMES.length);
   const bar = $("#loaderBar"), pct = $("#loaderPct");
-  const SHOTS = ["assets/shot-behind.jpg", "assets/shot-overhead.jpg"];
   let loaded = 0, released = false;
   function release() { if (released) return; released = true; document.body.classList.remove("is-loading"); }
-  SHOTS.forEach(src => {
-    const im = new Image();
+  FRAMES.forEach((src, i) => {
+    const im = new Image(); im.decoding = "async";
     im.onload = im.onerror = () => {
-      loaded++;
-      const p = Math.round(loaded / SHOTS.length * 100);
-      bar.style.width = p + "%"; pct.textContent = p + "%";
-      if (loaded === SHOTS.length) setTimeout(release, 350);
+      imgs[i] = im.naturalWidth ? im : null; loaded++;
+      const p = Math.round(loaded / FRAMES.length * 100); bar.style.width = p + "%"; pct.textContent = p + "%";
+      if (loaded >= 4) release();
+      if (i === FRAMES.length - 1) $("#slideImg").src = src;
     };
     im.src = src;
   });
-  setTimeout(release, 8000);
-  $("#slideImg").src = SHOTS[1];
+  setTimeout(release, 7000);
+
+  const cv = $("#filmCanvas"), ctx = cv.getContext("2d"), poster = $("#filmPoster");
+  function size() { const d = Math.min(devicePixelRatio || 1, 2); cv.width = innerWidth * d; cv.height = innerHeight * d; }
+  function cover(im, alpha, zoom) {
+    const cw = cv.width, ch = cv.height, r = Math.max(cw / im.naturalWidth, ch / im.naturalHeight) * zoom;
+    const w = im.naturalWidth * r, h = im.naturalHeight * r;
+    ctx.globalAlpha = alpha; ctx.drawImage(im, (cw - w) / 2, (ch - h) / 2, w, h); ctx.globalAlpha = 1;
+  }
+  function render(p) {
+    let k = 0; while (k < AT.length - 2 && p > AT[k + 1]) k++;
+    const span = AT[k + 1] - AT[k], f = Math.min(1, Math.max(0, (p - AT[k]) / span));
+    // clip frames blend continuously; the two keyframes hold, then cross-dissolve near the end of their span
+    const hold = k >= 12, mix = hold ? Math.max(0, (f - 0.7) / 0.3) : f;
+    const a = imgs[k], b = imgs[k + 1];
+    if (!a) return;
+    ctx.fillStyle = "#e9e8e5"; ctx.fillRect(0, 0, cv.width, cv.height);
+    cover(a, 1, 1 + (hold ? 0.05 * f : 0));
+    if (b && mix > 0) cover(b, mix, 1 + (hold ? 0.02 : 0));
+    poster.classList.add("is-hidden");
+  }
+  let cur = 0, target = 0;
+  function loop() { cur += (target - cur) * (reduce ? 1 : 0.12); render(cur); requestAnimationFrame(loop); }
 
   /* ---------------------------------------------------------- scroll */
   const film = $("#film"), slide = $("#slide"), top = $("#top");
   const caps = [...document.querySelectorAll(".cap")];
   const prog = $("#filmProgress"), hint = $("#scrollhint");
   const shot = $("#slideShot"), panel = $("#slidePanel"), rail = $("#rail"), track = $("#track");
-  const shade = document.createElement("div");
-  shade.className = "film__shade";
-  shade.style.cssText = "position:absolute;inset:0;pointer-events:none;background:linear-gradient(20deg,rgba(6,24,16,.78) 0%,rgba(6,24,16,.35) 32%,rgba(6,24,16,0) 58%);opacity:1";
-  $(".film__stage").insertBefore(shade, $(".cap"));
-
   function sectionProgress(el) {
     const r = el.getBoundingClientRect();
     return clamp(-r.top / (r.height - innerHeight), 0, 1);
@@ -59,28 +78,6 @@
     top.classList.toggle("is-solid", solid);
     top.classList.toggle("is-dark", !solid);
   }
-  // camera choreography on two real shots: push in over the shoulder, rise, rotate to top-down
-  const shotA = $("#shotA"), shotB = $("#shotB");
-  let cur = 0, target = 0;
-  function render(p) {
-    const push = ease(clamp(p / 0.5, 0, 1));                 // 0 → 0.5 : dolly in toward the knit
-    const x = clamp((p - 0.42) / 0.16, 0, 1), xe = ease(x);   // 0.38 → 0.62 : the rise / crossfade
-    const settle = ease(clamp((p - 0.6) / 0.4, 0, 1));        // 0.6 → 1 : overhead settles
-    const sa = 1 + 0.28 * push + 0.45 * xe;
-    shotA.style.transform = `scale(${sa}) translateY(${-3 * push}%)`;
-    shotA.style.opacity = 1 - xe;
-    shotA.style.filter = `blur(${10 * xe}px) brightness(${1 + 0.25 * Math.sin(Math.PI * x)})`;
-    const sb = 1.32 - 0.22 * xe - 0.1 * settle;
-    shotB.style.transform = `rotate(${(1 - xe) * -9}deg) scale(${sb})`;
-    shotB.style.opacity = xe;
-    shotB.style.filter = `blur(${10 * (1 - xe)}px) brightness(${1 + 0.25 * Math.sin(Math.PI * x)})`;
-  }
-  function loop() {
-    if (!reduce) cur += (target - cur) * 0.12; else cur = target;
-    render(cur);
-    requestAnimationFrame(loop);
-  }
-
   /* ---------------------------------------------------------- products */
   const money = v => "$" + Number(v).toFixed(2);
   const shopURL = h => "https://seulementlocal.com/products/" + h;
@@ -108,6 +105,7 @@
   const HERO = { t: "Knit 01 — Vieux-Port", v: "Local", p: null, a: true, s: [], i: ["assets/knit01.webp"], h: null, hero: true };
 
   fetch("assets/products.json").then(r => r.json()).then(d => {
+    window.__catalog = d.local;
     rail.appendChild(card(HERO, { hero: true, badge: "New design" }));
     d.local.filter(p => p.a).slice(0, 9).forEach(p => rail.appendChild(card(p)));
     const more = document.createElement("a");
@@ -133,6 +131,12 @@
   ];
   $("#brandlist").innerHTML = BRANDS.map(([n, d]) =>
     `<li><a href="https://seulementlocal.com/search?q=${encodeURIComponent(n)}" target="_blank" rel="noopener">${n}<small>${d} ↗</small></a></li>`).join("");
+
+  document.addEventListener("click", e => {
+    const b = e.target.closest("[data-open]"); if (!b || !window.__catalog) return;
+    const name = b.dataset.open; const p = name.startsWith("Knit 01") ? HERO : window.__catalog.find(x => x.t === name);
+    p && openQV(p);
+  });
 
   /* ---------------------------------------------------------- quick view */
   const qv = $("#qv");
@@ -169,7 +173,7 @@
     scrollTo({ top: y, behavior: reduce ? "auto" : "smooth" });
   });
 
-  addEventListener("resize", onScroll);
+  addEventListener("resize", () => { size(); onScroll(); });
   addEventListener("scroll", onScroll, { passive: true });
-  onScroll(); loop();
+  size(); onScroll(); loop();
 })();
