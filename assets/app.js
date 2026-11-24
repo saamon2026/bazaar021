@@ -5,9 +5,10 @@
   const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
   /* ---------------------------------------------------------- film frames (Flow clip + keyframes) */
-  const FRAMES = [...Array(13).keys()].map(i => "film/v" + String(i).padStart(2, "0") + ".webp").concat(["film/plum.webp", "film/endcard.webp"]);
-  // where each frame sits on the scroll timeline (0..1): the clip, a hold on the hoodie, the knit, the end card
-  const AT = [0, .05, .1, .15, .2, .25, .3, .35, .41, .47, .53, .6, .68, .82, .96];
+  const CLIP = 60;
+  const FRAMES = [...Array(CLIP).keys()].map(i => "film/c" + String(i).padStart(3, "0") + ".webp").concat(["film/plum.webp", "film/endcard.webp"]);
+  // where each frame sits on the scroll timeline (0..1): the Flow clip, then the knit, then the end card
+  const AT = [...Array(CLIP).keys()].map(i => 0.68 * i / (CLIP - 1)).concat([0.82, 0.96]);
   const imgs = new Array(FRAMES.length);
   const bar = $("#loaderBar"), pct = $("#loaderPct");
   let loaded = 0, released = false;
@@ -17,7 +18,7 @@
     im.onload = im.onerror = () => {
       imgs[i] = im.naturalWidth ? im : null; loaded++;
       const p = Math.round(loaded / FRAMES.length * 100); bar.style.width = p + "%"; pct.textContent = p + "%";
-      if (loaded >= 4) release();
+      if (loaded >= 8) release();
       if (i === FRAMES.length - 1) $("#slideImg").src = src;
     };
     im.src = src;
@@ -35,7 +36,7 @@
     let k = 0; while (k < AT.length - 2 && p > AT[k + 1]) k++;
     const span = AT[k + 1] - AT[k], f = Math.min(1, Math.max(0, (p - AT[k]) / span));
     // clip frames blend continuously; the two keyframes hold, then cross-dissolve near the end of their span
-    const hold = k >= 12, mix = hold ? Math.max(0, (f - 0.7) / 0.3) : f;
+    const hold = k >= CLIP - 1, mix = hold ? Math.max(0, (f - 0.7) / 0.3) : f;
     const a = imgs[k], b = imgs[k + 1];
     if (!a) return;
     ctx.fillStyle = "#e9e8e5"; ctx.fillRect(0, 0, cv.width, cv.height);
