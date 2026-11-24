@@ -81,7 +81,7 @@
   }
   /* ---------------------------------------------------------- products */
   const money = v => "$" + Number(v).toFixed(2);
-  const shopURL = h => "https://seulementlocal.com/products/" + h;
+  const shopURL = () => "/";
   function kind(t) {
     t = t.toLowerCase();
     if (/pant/.test(t)) return "pant";
@@ -131,7 +131,7 @@
     ["Riche et en santé", "Athletic club"], ["NYXYN", "Raw denim"], ["Madré", "Graphic tees"], ["Modeste", "Phantom sets"]
   ];
   $("#brandlist").innerHTML = BRANDS.map(([n, d]) =>
-    `<li><a href="https://seulementlocal.com/search?q=${encodeURIComponent(n)}" target="_blank" rel="noopener">${n}<small>${d} ↗</small></a></li>`).join("");
+    `<li><a href="/">${n}<small>${d} →</small></a></li>`).join("");
 
   document.addEventListener("click", e => {
     const b = e.target.closest("[data-open]"); if (!b || !window.__catalog) return;
@@ -156,7 +156,7 @@
     });
     const buy = $("#qvBuy");
     if (p.hero) { buy.href = "#stores"; buy.innerHTML = 'Get notified <span aria-hidden="true">→</span>'; }
-    else { buy.href = shopURL(p.h); buy.target = "_blank"; buy.innerHTML = (p.a ? "Add to cart" : "View product") + ' <span aria-hidden="true">→</span>'; }
+    else { buy.href = shopURL(); buy.removeAttribute("target"); buy.innerHTML = (p.a ? "Add to cart" : "View product") + ' <span aria-hidden="true">→</span>'; }
     buy.onclick = p.hero ? () => closeQV() : null;
     qv.hidden = false;
     $("#qvX").focus();
