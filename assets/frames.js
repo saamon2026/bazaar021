@@ -1,1 +1,0 @@
-window.FRAMES={"dir": "frames/", "files": ["f001.webp", "f003.webp", "f005.webp"]};

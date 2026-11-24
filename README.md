@@ -1,2 +1,2 @@
 # LOCAL — first look (KADRE concept)
-Static prototype: scroll-scrubbed designer film -> slide into the green store.
+Static prototype: designer film on scroll -> slide into the green store.

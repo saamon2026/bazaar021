@@ -1,12 +1,12 @@
 @font-face{font-family:"Local Serif";src:url(../fonts/DMSerifDisplay-Italic.ttf) format("truetype");font-style:italic;font-display:swap}
-@font-face{font-family:"Local Serif";src:url(../fonts/DMSerifDisplay-Regular.ttf) format("truetype");font-style:normal;font-display:swap}
-@font-face{font-family:"Inter";src:url(../fonts/Inter.ttf) format("truetype");font-weight:100 900;font-display:swap}
+
+
 
 :root{
   --green:#136544; --green-d:#0c4a31; --green-l:#1d7a54;
   --paper:#f6f4ef; --ink:#121412; --muted:#6b6f6a;
   --plum:#743c59; --cream:#ece2ce; --sun:#f0c83c; --amber:#e2963c;
-  --serif:"Local Serif",Georgia,serif; --sans:"Inter",system-ui,sans-serif;
+  --serif:"Local Serif",Georgia,serif; --sans:"Inter",-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
   --ease:cubic-bezier(.2,.7,.1,1);
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -43,25 +43,30 @@ body:not(.is-loading) .loader{opacity:0;visibility:hidden}
 .cart{display:grid;place-items:center;width:38px;height:38px}
 
 /* film */
-.film{position:relative;height:520vh}
+.film{position:relative;height:440vh}
 .film__stage{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;background:#e9e8e5}
-#filmCanvas{position:absolute;inset:0;width:100%;height:100%}
+.shot{position:absolute;inset:0;overflow:hidden;will-change:transform,opacity,filter}
+.shot img{width:100%;height:100%;object-fit:cover}
+.shot--a{transform-origin:66% 34%}
+.shot--a img{object-position:40% 50%}
+@media (max-aspect-ratio:1/1){.shot--a img{object-position:22% 50%}}
+.shot--b{opacity:0}
 .film__grain{position:absolute;inset:0;pointer-events:none;opacity:.07;mix-blend-mode:multiply;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
 .cap{position:absolute;left:clamp(20px,5vw,72px);bottom:clamp(70px,13vh,140px);max-width:620px;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease),transform .9s var(--ease);pointer-events:none}
 .cap.is-on{opacity:1;transform:none;pointer-events:auto}
-.cap--b{left:auto;right:clamp(20px,5vw,72px);text-align:right;bottom:auto;top:24vh}
-.cap--c{color:var(--paper);text-shadow:0 2px 24px rgba(0,0,0,.25)}
+.cap--b{}
+.cap{color:var(--paper);text-shadow:0 2px 30px rgba(0,0,0,.35)}
 .eyebrow{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
-.cap--c .eyebrow,.eyebrow--light{color:rgba(246,244,239,.75)}
+.cap .eyebrow,.eyebrow--light{color:rgba(246,244,239,.8)}
 .display{font-family:var(--serif);font-style:italic;font-weight:400;font-size:clamp(48px,7.4vw,116px);line-height:.95;letter-spacing:-.01em;color:var(--ink)}
 .display--md{font-size:clamp(40px,5.4vw,84px)}
-.display--light,.cap--c .display{color:var(--paper)}
-.cap--a .display{color:var(--green-d)}
+.display--light,.cap .display{color:var(--paper)}
+
 .cta{display:inline-flex;align-items:center;gap:10px;margin-top:26px;padding:15px 26px;border-radius:999px;background:var(--green);color:var(--paper);font-size:13px;letter-spacing:.12em;text-transform:uppercase;text-decoration:none;transition:transform .4s var(--ease),background .3s}
 .cta:hover{transform:translateY(-2px);background:var(--green-l)}
 .cta--dark{background:var(--ink)}
-.scrollhint{position:absolute;right:clamp(20px,5vw,72px);bottom:clamp(70px,13vh,140px);display:flex;flex-direction:column;align-items:center;gap:10px;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);transition:opacity .5s}
-.scrollhint i{width:1px;height:46px;background:linear-gradient(var(--muted),transparent);animation:drip 1.8s var(--ease) infinite}
+.scrollhint{position:absolute;right:clamp(20px,5vw,72px);bottom:clamp(70px,13vh,140px);display:flex;flex-direction:column;align-items:center;gap:10px;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:rgba(246,244,239,.85);transition:opacity .5s}
+.scrollhint i{width:1px;height:46px;background:linear-gradient(rgba(246,244,239,.9),transparent);animation:drip 1.8s var(--ease) infinite}
 @keyframes drip{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
 .film__progress{position:absolute;left:0;right:0;bottom:0;height:2px;background:rgba(0,0,0,.06)}
 .film__progress i{display:block;height:100%;width:0;background:var(--green)}
@@ -71,10 +76,11 @@ body:not(.is-loading) .loader{opacity:0;visibility:hidden}
 .slide__stage{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;background:#e9e8e5}
 .slide__shot{position:absolute;inset:0;will-change:transform,clip-path}
 .slide__shot img{width:100%;height:100%;object-fit:cover}
-.slide__panel{position:absolute;inset:0;background:var(--green);color:var(--paper);transform:translateX(100%);will-change:transform;display:flex;align-items:center;gap:clamp(30px,5vw,80px);padding:90px 0 40px clamp(20px,5vw,72px)}
+.slide__panel{position:absolute;inset:0;background:var(--green);color:var(--paper);transform:translateX(100%);will-change:transform;display:flex;align-items:center;padding:90px 0 40px clamp(20px,5vw,72px);overflow:hidden}
 .slide__intro{flex:0 0 min(380px,36vw)}
 .lede{margin-top:22px;max-width:320px;font-size:15px;line-height:1.6;color:rgba(246,244,239,.8)}
-.rail{display:flex;gap:18px;will-change:transform}
+.track{display:flex;align-items:center;gap:clamp(30px,5vw,80px);will-change:transform}
+.rail{display:flex;gap:18px}
 
 /* product cards */
 .card{position:relative;flex:0 0 clamp(220px,22vw,320px);text-decoration:none;color:inherit;text-align:left;cursor:pointer}
@@ -147,7 +153,8 @@ body:not(.is-loading) .loader{opacity:0;visibility:hidden}
 @media (max-width:980px){
   .grid{grid-template-columns:repeat(2,1fr)}
   .top__nav{display:none}
-  .slide__panel{flex-direction:column;align-items:flex-start;justify-content:center;gap:28px;padding:84px 0 30px 20px}
+  .slide__panel{padding:84px 0 30px 20px}
+  .track{gap:28px}
   .slide__intro{flex:none}
   .slide__intro .display{font-size:46px}
   .lede{margin-top:12px;font-size:14px}

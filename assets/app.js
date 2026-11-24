@@ -1,80 +1,35 @@
 (() => {
-  const F = window.FRAMES;                       // {files:[...], dir:"frames/"}
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const $ = (s, r = document) => r.querySelector(s);
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
-  /* ---------------------------------------------------------- frames */
-  const imgs = new Array(F.files.length);
-  let loaded = 0;
+  /* ---------------------------------------------------------- preload the two shots */
   const bar = $("#loaderBar"), pct = $("#loaderPct");
-  // load every 4th frame first so the scrub works early, then fill in
-  const order = [];
-  for (let s of [4, 2, 1]) for (let i = 0; i < F.files.length; i += s) if (!order.includes(i)) order.push(i);
-  const firstPass = Math.ceil(F.files.length / 4);
-  let released = false;
-  function release() {
-    if (released) return; released = true;
-    document.body.classList.remove("is-loading");
-    draw(true);
-  }
-  order.forEach((i, n) => {
+  const SHOTS = ["assets/shot-behind.jpg", "assets/shot-overhead.jpg"];
+  let loaded = 0, released = false;
+  function release() { if (released) return; released = true; document.body.classList.remove("is-loading"); }
+  SHOTS.forEach(src => {
     const im = new Image();
-    im.decoding = "async";
     im.onload = im.onerror = () => {
-      imgs[i] = im.naturalWidth ? im : null;
       loaded++;
-      const p = Math.min(100, Math.round(loaded / firstPass * 100));
+      const p = Math.round(loaded / SHOTS.length * 100);
       bar.style.width = p + "%"; pct.textContent = p + "%";
-      if (loaded >= firstPass) release();
-      if (i === F.files.length - 1) $("#slideImg").src = im.src;
-      if (!released || Math.abs(i - cur) < 3) draw(true);
+      if (loaded === SHOTS.length) setTimeout(release, 350);
     };
-    // stagger network a little so the first pass lands first
-    setTimeout(() => { im.src = F.dir + F.files[i]; }, n < firstPass ? 0 : 60 + n * 8);
+    im.src = src;
   });
-  setTimeout(release, 9000); // never trap the user behind the loader
-
-  /* ---------------------------------------------------------- canvas */
-  const cv = $("#filmCanvas"), ctx = cv.getContext("2d");
-  function size() {
-    const d = Math.min(devicePixelRatio || 1, 2);
-    cv.width = innerWidth * d; cv.height = innerHeight * d;
-    draw(true);
-  }
-  function nearest(i) {
-    for (let k = 0; k < imgs.length; k++) {
-      if (imgs[i - k]) return imgs[i - k];
-      if (imgs[i + k]) return imgs[i + k];
-    }
-    return null;
-  }
-  let cur = 0, target = 0, lastDrawn = -1;
-  function cover(im) {
-    const cw = cv.width, ch = cv.height, r = Math.max(cw / im.naturalWidth, ch / im.naturalHeight);
-    const w = im.naturalWidth * r, h = im.naturalHeight * r;
-    // on portrait screens keep the subject (left-centre of the frame) in view
-    const bias = cw < ch ? 0.44 : 0.5;
-    ctx.drawImage(im, (cw - w) * bias, (ch - h) / 2, w, h);
-  }
-  function draw(force) {
-    const i = Math.round(cur);
-    if (!force && i === lastDrawn) return;
-    const im = nearest(i);
-    if (!im) return;
-    cover(im);
-    lastDrawn = i;
-  }
+  setTimeout(release, 8000);
+  $("#slideImg").src = SHOTS[1];
 
   /* ---------------------------------------------------------- scroll */
   const film = $("#film"), slide = $("#slide"), top = $("#top");
   const caps = [...document.querySelectorAll(".cap")];
   const prog = $("#filmProgress"), hint = $("#scrollhint");
-  const shot = $("#slideShot"), panel = $("#slidePanel"), rail = $("#rail");
+  const shot = $("#slideShot"), panel = $("#slidePanel"), rail = $("#rail"), track = $("#track");
   const shade = document.createElement("div");
   shade.className = "film__shade";
-  shade.style.cssText = "position:absolute;inset:0;pointer-events:none;background:linear-gradient(0deg,rgba(8,30,20,.62),rgba(8,30,20,0) 55%);opacity:0";
+  shade.style.cssText = "position:absolute;inset:0;pointer-events:none;background:linear-gradient(20deg,rgba(6,24,16,.78) 0%,rgba(6,24,16,.35) 32%,rgba(6,24,16,0) 58%);opacity:1";
   $(".film__stage").insertBefore(shade, $(".cap"));
 
   function sectionProgress(el) {
@@ -83,12 +38,11 @@
   }
   function onScroll() {
     const p = sectionProgress(film);
-    target = p * (F.files.length - 1);
+    target = p;
     if (reduce) cur = target;
     prog.style.width = (p * 100) + "%";
     hint.style.opacity = p > 0.03 ? 0 : 1;
     caps.forEach(c => c.classList.toggle("is-on", p >= +c.dataset.in && p < +c.dataset.out));
-    shade.style.opacity = clamp((p - 0.62) / 0.25, 0, 1);
 
     // the slide: shot drifts left and recedes, green store slides in, then the rail travels
     const q = sectionProgress(slide);
@@ -97,16 +51,33 @@
     shot.style.filter = `brightness(${1 - 0.35 * a})`;
     panel.style.transform = `translateX(${(1 - a) * 100}%)`;
     const b = clamp((q - 0.36) / 0.6, 0, 1);
-    const travel = Math.max(0, rail.scrollWidth - (panel.clientWidth - rail.offsetLeft) + 40);
-    rail.style.transform = `translateX(${-travel * b}px)`;
+    const travel = Math.max(0, track.scrollWidth - panel.clientWidth + parseFloat(getComputedStyle(panel).paddingLeft) + 40);
+    track.style.transform = `translateX(${-travel * b}px)`;
 
-    const inStore = slide.getBoundingClientRect().top <= 0;
-    top.classList.toggle("is-dark", (p > 0.72 && !inStore) || (inStore && a > 0.5 && document.querySelector("#shop").getBoundingClientRect().top > 60));
-    top.classList.toggle("is-solid", $("#brands").getBoundingClientRect().top < 60);
+    const br = $("#brands").getBoundingClientRect();
+    const solid = br.top <= 60 && br.bottom > 60;
+    top.classList.toggle("is-solid", solid);
+    top.classList.toggle("is-dark", !solid);
+  }
+  // camera choreography on two real shots: push in over the shoulder, rise, rotate to top-down
+  const shotA = $("#shotA"), shotB = $("#shotB");
+  let cur = 0, target = 0;
+  function render(p) {
+    const push = ease(clamp(p / 0.5, 0, 1));                 // 0 → 0.5 : dolly in toward the knit
+    const x = clamp((p - 0.42) / 0.16, 0, 1), xe = ease(x);   // 0.38 → 0.62 : the rise / crossfade
+    const settle = ease(clamp((p - 0.6) / 0.4, 0, 1));        // 0.6 → 1 : overhead settles
+    const sa = 1 + 0.28 * push + 0.45 * xe;
+    shotA.style.transform = `scale(${sa}) translateY(${-3 * push}%)`;
+    shotA.style.opacity = 1 - xe;
+    shotA.style.filter = `blur(${10 * xe}px) brightness(${1 + 0.25 * Math.sin(Math.PI * x)})`;
+    const sb = 1.32 - 0.22 * xe - 0.1 * settle;
+    shotB.style.transform = `rotate(${(1 - xe) * -9}deg) scale(${sb})`;
+    shotB.style.opacity = xe;
+    shotB.style.filter = `blur(${10 * (1 - xe)}px) brightness(${1 + 0.25 * Math.sin(Math.PI * x)})`;
   }
   function loop() {
-    if (!reduce) cur += (target - cur) * 0.14;
-    draw(false);
+    if (!reduce) cur += (target - cur) * 0.12; else cur = target;
+    render(cur);
     requestAnimationFrame(loop);
   }
 
@@ -198,7 +169,7 @@
     scrollTo({ top: y, behavior: reduce ? "auto" : "smooth" });
   });
 
-  addEventListener("resize", () => { size(); onScroll(); });
+  addEventListener("resize", onScroll);
   addEventListener("scroll", onScroll, { passive: true });
-  size(); onScroll(); loop();
+  onScroll(); loop();
 })();
