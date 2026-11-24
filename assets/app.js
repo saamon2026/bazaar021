@@ -5,7 +5,7 @@
   const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
   /* ---------------------------------------------------------- film frames (Flow clip + keyframes) */
-  const CLIP = 60;
+  const CLIP = 96;
   const FRAMES = [...Array(CLIP).keys()].map(i => "film/c" + String(i).padStart(3, "0") + ".webp").concat(["film/plum.webp", "film/endcard.webp"]);
   // where each frame sits on the scroll timeline (0..1): the Flow clip, then the knit, then the end card
   const AT = [...Array(CLIP).keys()].map(i => 0.68 * i / (CLIP - 1)).concat([0.82, 0.96]);
