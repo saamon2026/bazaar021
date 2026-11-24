@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Local. — Every stitch has a story</title>
+<meta name="description" content="Local. — Montréal streetwear, designed from the city. Shop Heritage hoodies, Kennie sweaters, Thermal Reimagined and the new Vieux-Port knit.">
+<meta name="theme-color" content="#136544">
+<link rel="preload" href="fonts/DMSerifDisplay-Italic.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body class="is-loading">
+
+<!-- loader -->
+<div class="loader" id="loader" aria-live="polite">
+  <div class="loader__mark">Local<span>.</span></div>
+  <div class="loader__bar"><i id="loaderBar"></i></div>
+  <div class="loader__pct" id="loaderPct">0%</div>
+</div>
+
+<!-- top bar -->
+<header class="top" id="top">
+  <a class="brand" href="#" aria-label="Local home">Local<span>.</span></a>
+  <nav class="top__nav" aria-label="Primary">
+    <a href="#shop">Shop</a>
+    <a href="#brands">Brands</a>
+    <a href="#stores">Stores</a>
+  </nav>
+  <div class="top__right">
+    <button class="pill" id="skip" type="button">Skip to shop <span aria-hidden="true">→</span></button>
+    <a class="cart" href="https://seulementlocal.com/cart" aria-label="Cart">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 4h2l2.2 10.2a1 1 0 0 0 1 .8h9.6a1 1 0 0 0 1-.8L21 7H6" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="9" cy="19.5" r="1.3" fill="currentColor"/><circle cx="17" cy="19.5" r="1.3" fill="currentColor"/></svg>
+    </a>
+  </div>
+</header>
+
+<main>
+  <!-- SCENE 01 — the designer (scroll-scrubbed film) -->
+  <section class="film" id="film" aria-label="The designer">
+    <div class="film__stage">
+      <canvas id="filmCanvas" aria-hidden="true"></canvas>
+      <div class="film__grain" aria-hidden="true"></div>
+
+      <div class="cap cap--a" data-in="0" data-out="0.22">
+        <p class="eyebrow">Montréal · Atelier · 21:47</p>
+        <h1 class="display">Every stitch<br>has a story.</h1>
+      </div>
+      <div class="cap cap--b" data-in="0.30" data-out="0.55">
+        <p class="eyebrow">Chapter 01</p>
+        <h2 class="display display--md">Designed<br>from the city.</h2>
+      </div>
+      <div class="cap cap--c" data-in="0.72" data-out="1.01">
+        <p class="eyebrow">Knit 01 — Vieux-Port</p>
+        <h2 class="display display--md">Woven into<br>your story.</h2>
+        <button class="cta" id="enterStore" type="button">Enter the store <span aria-hidden="true">→</span></button>
+      </div>
+
+      <div class="scrollhint" id="scrollhint"><span>Scroll</span><i></i></div>
+      <div class="film__progress" aria-hidden="true"><i id="filmProgress"></i></div>
+    </div>
+  </section>
+
+  <!-- the slide: overhead frame → green store -->
+  <section class="slide" id="slide" aria-label="Into the store">
+    <div class="slide__stage">
+      <div class="slide__shot" id="slideShot"><img id="slideImg" alt="The Vieux-Port knit on the designer's desk"></div>
+      <div class="slide__panel" id="slidePanel">
+        <div class="slide__intro">
+          <p class="eyebrow eyebrow--light">The store</p>
+          <h2 class="display display--light">Seulement<br>Local.</h2>
+          <p class="lede">Montréal streetwear, made in small runs. Every piece starts on this desk.</p>
+        </div>
+        <div class="rail" id="rail"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- shop all LOCAL -->
+  <section class="shop" id="shop" aria-labelledby="shopTitle">
+    <div class="shop__head">
+      <h2 id="shopTitle" class="display display--md display--light">Shop Local.</h2>
+      <div class="filters" role="tablist" aria-label="Filter">
+        <button class="chip is-on" data-f="all" type="button">All</button>
+        <button class="chip" data-f="hood" type="button">Hoodies</button>
+        <button class="chip" data-f="knit" type="button">Knits &amp; thermals</button>
+        <button class="chip" data-f="tee" type="button">Tees &amp; jerseys</button>
+        <button class="chip" data-f="pant" type="button">Pants</button>
+      </div>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <!-- other brands — separate -->
+  <section class="brands" id="brands" aria-labelledby="brandsTitle">
+    <div class="brands__head">
+      <p class="eyebrow">Also at Local</p>
+      <h2 id="brandsTitle" class="display display--md">Québec labels<br>we stand behind.</h2>
+    </div>
+    <ul class="brandlist" id="brandlist"></ul>
+  </section>
+
+  <section class="stores" id="stores" aria-labelledby="storesTitle">
+    <h2 id="storesTitle" class="display display--md display--light">Come by.</h2>
+    <div class="stores__grid">
+      <div><p class="eyebrow eyebrow--light">Vieux-Montréal</p><p>85 Rue Saint-Paul Ouest</p></div>
+      <div><p class="eyebrow eyebrow--light">Downtown</p><p>1021 Rue Sainte-Catherine Ouest</p></div>
+      <div><p class="eyebrow eyebrow--light">Laval</p><p>Carrefour Laval</p></div>
+    </div>
+    <form class="news" onsubmit="event.preventDefault();this.querySelector('button').textContent='Merci ✓'">
+      <label for="email">Join the Local family — first access to new drops.</label>
+      <div class="news__row"><input id="email" type="email" required placeholder="Email"><button type="submit">Subscribe</button></div>
+    </form>
+  </section>
+</main>
+
+<footer class="foot">
+  <span class="brand brand--sm">Local<span>.</span></span>
+  <span>Designed from the city. Woven into your story.</span>
+  <span class="foot__note">Concept prototype</span>
+</footer>
+
+<!-- quick view -->
+<div class="qv" id="qv" role="dialog" aria-modal="true" aria-labelledby="qvTitle" hidden>
+  <div class="qv__card">
+    <button class="qv__x" id="qvX" type="button" aria-label="Close">×</button>
+    <div class="qv__img"><img id="qvImg" alt=""></div>
+    <div class="qv__body">
+      <p class="eyebrow" id="qvVendor">Local</p>
+      <h3 id="qvTitle"></h3>
+      <p class="qv__price" id="qvPrice"></p>
+      <div class="sizes" id="qvSizes"></div>
+      <a class="cta cta--dark" id="qvBuy" href="#">Add to cart <span aria-hidden="true">→</span></a>
+      <p class="qv__fine">Free shipping in Canada over $100 · 30-day returns</p>
+    </div>
+  </div>
+</div>
+
+<script src="assets/frames.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
